@@ -12,8 +12,3 @@ Este é um sistema de votação simples desenvolvido em Node.js com MySQL e fron
 - Node.js
 - MySQL
 - Navegador Web
-
-## Como Executar
-1. Instale as dependências:
-   ```bash
-   npm install
