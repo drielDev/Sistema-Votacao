@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Votação</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <img src="https://signotech.com.br/wp-content/uploads/2023/03/SignoTech.webp" alt="Marca da Empresa" class="logo">
+  </header>
+  <main>
+    <section id="enquetes-list">
+      <h2 id="enquetes-titulo">Enquetes Disponíveis</h2>
+      <button id="nova-enquete-btn" class="btn-nova-enquete">Nova Enquete</button>
+      <div id="enquetes"></div>
+    </section>
+    <section id="enquete-detalhes" style="display: none;">
+      <h2 id="enquete-titulo"></h2>
+      <p id="enquete-datas"></p>
+      <ul id="opcoes-list"></ul>
+      <button id="voltar-btn">Voltar</button>
+    </section>
+    <section id="nova-enquete" style="display: none;">
+      <h2>Criar Nova Enquete</h2>
+      <form id="nova-enquete-form">
+        <label for="titulo">Título:</label>
+        <input type="text" id="titulo" name="titulo" required>
+        <label for="data_inicio">Data de Início:</label>
+        <input type="datetime-local" id="data_inicio" name="data_inicio" required>
+        <label for="data_fim">Data de Fim:</label>
+        <input type="datetime-local" id="data_fim" name="data_fim" required>
+        <div id="opcoes-container">
+          <!-- As opções serão adicionadas dinamicamente -->
+        </div>
+        <button type="button" id="adicionar-opcao-btn">Adicionar Opção</button>
+        <button type="submit">Criar Enquete</button>
+      </form>
+      <button id="cancelar-btn">Cancelar</button>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

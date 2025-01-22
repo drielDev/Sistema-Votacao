@@ -1,13 +1,28 @@
 const Enquete = require('../models/enquete');
 const Opcao = require('../models/opcao');
 
-// Criar uma nova enquete
+// Criar uma nova enquete com opções
 const createEnquete = async (req, res) => {
   try {
-    const { titulo, data_inicio, data_fim } = req.body;
+    const { titulo, data_inicio, data_fim, opcoes } = req.body;
+
+    if (new Date(data_inicio) >= new Date(data_fim)) {
+      return res.status(400).json({ error: 'A data de início deve ser anterior à data de término.' });
+    }
+
     const enquete = await Enquete.create({ titulo, data_inicio, data_fim });
+
+    // Criar as opções associadas à enquete
+    if (opcoes && opcoes.length > 0) {
+      const opcoesCriadas = await Promise.all(
+        opcoes.map(descricao => Opcao.create({ descricao, enqueteId: enquete.id }))
+      );
+      enquete.Opcoes = opcoesCriadas;
+    }
+
     res.status(201).json(enquete);
   } catch (error) {
+    console.error('Erro ao criar enquete:', error);
     res.status(500).json({ error: 'Erro ao criar enquete' });
   }
 };
@@ -16,28 +31,37 @@ const createEnquete = async (req, res) => {
 const getAllEnquetes = async (req, res) => {
   try {
     const enquetes = await Enquete.findAll({
-      include: Opcao, // Inclui as opções de cada enquete
+      include: {
+        model: Opcao,
+        as: 'Opcoes', // Deve ser exatamente o mesmo alias do relacionamento
+      },
     });
+
     res.status(200).json(enquetes);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar enquetes' });
+    console.error('Erro ao buscar enquetes:', error);
+    res.status(500).json({ error: 'Erro ao buscar enquetes', detalhes: error.message });
   }
 };
 
-// Obter uma enquete específica
+
+
+// Função para obter os detalhes de uma enquete, incluindo as opções
 const getEnqueteById = async (req, res) => {
   try {
     const { id } = req.params;
     const enquete = await Enquete.findByPk(id, {
-      include: Opcao, // Inclui as opções de resposta
+      include: [{ model: Opcao, as: 'Opcoes' }],
     });
-    if (enquete) {
-      res.status(200).json(enquete);
-    } else {
-      res.status(404).json({ error: 'Enquete não encontrada' });
+
+    if (!enquete) {
+      return res.status(404).json({ error: 'Enquete não encontrada' });
     }
+
+    res.status(200).json(enquete);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar enquete' });
+    console.error('Erro ao buscar detalhes da enquete:', error);
+    res.status(500).json({ error: 'Erro ao buscar detalhes da enquete' });
   }
 };
 
