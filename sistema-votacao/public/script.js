@@ -15,9 +15,10 @@ const cancelarBtn = document.getElementById('cancelar-btn');
 const opcoesContainer = document.getElementById('opcoes-container');
 
 let opcaoCount = 0; // Contador para as opções
+let editandoEnqueteId = null; // ID da enquete que está sendo editada
 
 // Função para adicionar uma nova opção ao formulário de nova enquete
-function adicionarOpcao() {
+function adicionarOpcao(descricao = '') {
   opcaoCount++;
   const opcaoDiv = document.createElement('div');
   opcaoDiv.className = 'opcao-item';
@@ -32,13 +33,18 @@ function adicionarOpcao() {
   input.id = `opcao${opcaoCount}`;
   input.name = `opcao${opcaoCount}`;
   input.required = true;
-
+  input.value = descricao;
 
   opcaoDiv.appendChild(label);
   opcaoDiv.appendChild(input);
   opcoesContainer.appendChild(opcaoDiv);
 }
 
+// Função para remover uma opção do formulário de nova enquete
+function removerOpcao(id) {
+  const opcaoDiv = document.getElementById(id);
+  opcaoDiv.remove();
+}
 
 // Adicionar as três opções iniciais
 for (let i = 0; i < 3; i++) {
@@ -46,7 +52,7 @@ for (let i = 0; i < 3; i++) {
 }
 
 // Evento para adicionar mais opções
-adicionarOpcaoBtn.addEventListener('click', adicionarOpcao);
+adicionarOpcaoBtn.addEventListener('click', () => adicionarOpcao());
 
 // Função para carregar todas as enquetes
 async function carregarEnquetes() {
@@ -80,6 +86,7 @@ async function carregarEnquetes() {
         <p>Fim: ${new Date(enquete.data_fim).toLocaleString()}</p>
         <p>Status: ${status}</p>
         <button onclick="mostrarDetalhes(${enquete.id})">Ver Detalhes</button>
+        <button onclick="editarEnquete(${enquete.id})">Editar</button>
         <button onclick="deletarEnquete(${enquete.id})" class="btn-deletar">Deletar</button>
       `;
       enquetesList.appendChild(card);
@@ -208,7 +215,7 @@ async function deletarEnquete(id) {
   }
 }
 
-// Função para criar uma nova enquete
+// Função para criar ou editar uma enquete
 novaEnqueteForm.addEventListener('submit', async (event) => {
   event.preventDefault();
 
@@ -225,8 +232,11 @@ novaEnqueteForm.addEventListener('submit', async (event) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/enquetes`, {
-      method: 'POST',
+    const method = editandoEnqueteId ? 'PUT' : 'POST';
+    const url = editandoEnqueteId ? `${API_BASE_URL}/enquetes/${editandoEnqueteId}` : `${API_BASE_URL}/enquetes`;
+
+    const response = await fetch(url, {
+      method,
       headers: {
         'Content-Type': 'application/json'
       },
@@ -235,7 +245,7 @@ novaEnqueteForm.addEventListener('submit', async (event) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Erro ao criar enquete');
+      throw new Error(errorData.error || 'Erro ao salvar enquete');
     }
 
     // Recarregar a lista de enquetes
@@ -254,13 +264,14 @@ novaEnqueteForm.addEventListener('submit', async (event) => {
     enquetesList.style.display = 'flex';
     novaEnqueteBtn.style.display = 'block';
     document.getElementById('enquetes-titulo').style.display = 'block';
+    editandoEnqueteId = null; // Resetar o ID da enquete que está sendo editada
   } catch (error) {
-    console.error('Erro ao criar enquete:', error);
+    console.error('Erro ao salvar enquete:', error);
 
     const mensagem = document.createElement('div');
     mensagem.className = 'mensagem-sucesso';
     mensagem.style.backgroundColor = '#dc3545'; // Cor de fundo para erro
-    mensagem.textContent = 'Erro ao criar enquete. Tente novamente.';
+    mensagem.textContent = 'Erro ao salvar enquete. Tente novamente.';
     document.body.appendChild(mensagem);
 
     // Adiciona a classe 'show' para iniciar a animação
@@ -273,6 +284,37 @@ novaEnqueteForm.addEventListener('submit', async (event) => {
     }, 3000);
   }
 });
+
+// Função para carregar os dados de uma enquete no formulário de edição
+async function editarEnquete(id) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/enquetes/${id}`);
+    const enquete = await response.json();
+
+    // Preencher o formulário com os dados da enquete
+    document.getElementById('titulo').value = enquete.titulo;
+    document.getElementById('data_inicio').value = enquete.data_inicio;
+    document.getElementById('data_fim').value = enquete.data_fim;
+
+    // Limpar as opções existentes
+    opcoesContainer.innerHTML = '';
+    opcaoCount = 0;
+
+    // Adicionar as opções da enquete
+    enquete.Opcoes.forEach(opcao => adicionarOpcao(opcao.descricao));
+
+    // Mostrar o formulário de edição
+    enquetesList.style.display = 'none';
+    novaEnqueteSection.style.display = 'block';
+    novaEnqueteBtn.style.display = 'none';
+    document.getElementById('enquetes-titulo').style.display = 'none';
+
+    // Definir o ID da enquete que está sendo editada
+    editandoEnqueteId = id;
+  } catch (error) {
+    console.error('Erro ao carregar enquete para edição:', error);
+  }
+}
 
 // Evento para mostrar o formulário de nova enquete
 novaEnqueteBtn.addEventListener('click', () => {
@@ -288,6 +330,7 @@ cancelarBtn.addEventListener('click', () => {
   enquetesList.style.display = 'flex';
   novaEnqueteBtn.style.display = 'block';
   document.getElementById('enquetes-titulo').style.display = 'block';
+  editandoEnqueteId = null; // Resetar o ID da enquete que está sendo editada
 });
 
 // Evento para voltar à lista de enquetes
